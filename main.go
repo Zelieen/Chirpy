@@ -1,16 +1,22 @@
 package main
 
 import (
+	"log"
 	"net/http"
 )
 
 func main() {
+	const filepathRoot = "."
+	const port = "8080"
+
 	ServeMux := http.NewServeMux()
-	Server := &http.Server{}
-	Server.Handler = ServeMux
-	Server.Addr = ":8080"
+	ServeMux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
 
-	ServeMux.Handle("/", http.FileServer(http.Dir(".")))
+	Server := &http.Server{
+		Handler: ServeMux,
+		Addr:    ":" + port,
+	}
 
-	Server.ListenAndServe()
+	log.Printf("Serving from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(Server.ListenAndServe())
 }
