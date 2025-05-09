@@ -9,5 +9,8 @@ func main() {
 	Server := &http.Server{}
 	Server.Handler = ServeMux
 	Server.Addr = ":8080"
+
+	ServeMux.Handle("/", http.FileServer(http.Dir(".")))
+
 	Server.ListenAndServe()
 }
