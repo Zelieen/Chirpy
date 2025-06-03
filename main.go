@@ -10,7 +10,9 @@ func main() {
 	const port = "8080"
 
 	ServeMux := http.NewServeMux()
-	ServeMux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
+	ServeMux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+
+	ServeMux.HandleFunc("/healthz", readyhandler)
 
 	Server := &http.Server{
 		Handler: ServeMux,
