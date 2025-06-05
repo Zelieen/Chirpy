@@ -3,14 +3,20 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync/atomic"
 )
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
 
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
 	ServeMux := http.NewServeMux()
-	ServeMux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+	appHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
+	ServeMux.Handle("/app/", appHandler)
 
 	ServeMux.HandleFunc("/healthz", readyhandler)
 
@@ -21,4 +27,8 @@ func main() {
 
 	log.Printf("Serving from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(Server.ListenAndServe())
+}
+
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	cfg.fileserverHits.Add(1)
 }
