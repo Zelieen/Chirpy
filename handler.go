@@ -43,8 +43,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 
 	type returnVals struct {
 		// the key will be the name of struct field unless you give it an explicit JSON tag
-		Error string `json:"error"`
-		Valid bool   `json:"valid"`
+		Valid bool `json:"valid"`
 	}
 	respBody := returnVals{}
 
@@ -56,37 +55,16 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		// an error will be thrown if the JSON is invalid or has the wrong types
 		// any missing fields will simply have their values in the struct set to their zero value
 		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(500)
-		respBody.Error = "Error decoding request"
-		respBody.Valid = false
-		// Encode Response
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(dat)
+		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		return
 	}
 
 	// check Chirp length
 	if len(params.Body) > 140 {
-		respBody.Error = "Chirp is too long"
-		respBody.Valid = false
-		w.WriteHeader(400)
-	} else {
-		respBody.Valid = true
-		w.WriteHeader(200)
-	}
-
-	// Encode Response
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(dat)
+
+	respBody.Valid = true
+	respondWithJSON(w, http.StatusOK, respBody)
 }
