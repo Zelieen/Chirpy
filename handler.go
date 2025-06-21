@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func readyHandler(w http.ResponseWriter, request *http.Request) {
@@ -34,6 +35,14 @@ func (cfg *apiConfig) resetHandler(w http.ResponseWriter, request *http.Request)
 	w.Write([]byte(msg))
 }
 
+func getProfanityList() []string {
+	return []string{
+		"kerfuffle",
+		"sharbert",
+		"fornax",
+	}
+}
+
 func validateHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		// these tags indicate how the keys in the JSON should be mapped to the struct fields
@@ -43,7 +52,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 
 	type returnVals struct {
 		// the key will be the name of struct field unless you give it an explicit JSON tag
-		Valid bool `json:"valid"`
+		Cleaned_Body string `json:"cleaned_body"`
 	}
 	respBody := returnVals{}
 
@@ -65,6 +74,18 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respBody.Valid = true
+	// replace "profanity"
+	words := strings.Split(params.Body, " ")
+	for i, w := range words {
+		for _, p := range getProfanityList() {
+			if strings.ToLower(w) == p {
+				words[i] = "****"
+				continue
+			}
+		}
+	}
+	cleaned := strings.Join(words, " ")
+
+	respBody.Cleaned_Body = cleaned
 	respondWithJSON(w, http.StatusOK, respBody)
 }
