@@ -15,7 +15,7 @@ import (
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-	dbQueries      *database.Queries
+	db             *database.Queries
 }
 
 func main() {
@@ -26,13 +26,16 @@ func main() {
 
 	dbURL := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("Error opening the database")
+	}
 	dbQueries := database.New(db)
 
 	const filepathRoot = "."
 	const port = "8080"
 	cfg := apiConfig{
 		fileserverHits: atomic.Int32{},
-		dbQueries:      dbQueries,
+		db:             dbQueries,
 	}
 
 	ServeMux := http.NewServeMux()
@@ -43,6 +46,7 @@ func main() {
 	ServeMux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
 	ServeMux.HandleFunc("POST /admin/reset", cfg.resetHandler)
 	ServeMux.HandleFunc("POST /api/validate_chirp", validateHandler)
+	ServeMux.HandleFunc("POST /api/users", cfg.userHandler)
 
 	Server := &http.Server{
 		Handler: ServeMux,
