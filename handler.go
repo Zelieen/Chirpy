@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func readyHandler(w http.ResponseWriter, request *http.Request) {
@@ -108,6 +111,13 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 
+	type User struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -126,5 +136,5 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, user)
+	respondWithJSON(w, http.StatusCreated, User(user))
 }
