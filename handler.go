@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,11 +28,23 @@ func (cfg *apiConfig) metricHandler(w http.ResponseWriter, request *http.Request
 	}
 }
 
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, request *http.Request) {
+func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
+	if cfg.platform != "dev" {
+		respondWithError(w, http.StatusForbidden, "Not allowed", errors.New("Action is forbidden outside the development platform"))
+		return
+	}
+
+	// reset
 	cfg.fileserverHits.Store(0)
+	err := cfg.db.DeleteAllUsers(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error deleting all users", err)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	msg := fmt.Sprintf("Reset hits: %v", cfg.fileserverHits.Load())
+	msg := fmt.Sprintf("Reset website hits to %v\nand deleted all users from database", cfg.fileserverHits.Load())
 	w.Write([]byte(msg))
 }
 
@@ -95,13 +108,6 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 
-	type returnVals struct {
-		ID      string `json:"id"`
-		Created string `json:"created_at"`
-		Updated string `json:"updated_at"`
-		Email   string `json:"email"`
-	}
-
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -119,10 +125,6 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Error while creating user", err)
 		return
 	}
-
-	//respBody := returnVals{
-	//	ID: string(user.ID),
-	//}
 
 	respondWithJSON(w, http.StatusCreated, user)
 }
