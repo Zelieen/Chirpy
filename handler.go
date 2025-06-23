@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"internal/database"
 	"log"
 	"net/http"
 	"os"
@@ -33,7 +34,7 @@ func (cfg *apiConfig) metricHandler(w http.ResponseWriter, request *http.Request
 
 func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
-		respondWithError(w, http.StatusForbidden, "Not allowed", errors.New("Action is forbidden outside the development platform"))
+		respondWithError(w, http.StatusForbidden, "Not allowed", errors.New("action is forbidden outside the development platform"))
 		return
 	}
 
@@ -59,26 +60,25 @@ func getProfanityList() []string {
 	}
 }
 
-func validateHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) chirpHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		// these tags indicate how the keys in the JSON should be mapped to the struct fields
-		// the struct fields must be exported (start with a capital letter) if you want them parsed
-		Body string `json:"body"`
+		Body   string        `json:"body"`
+		UserID uuid.NullUUID `json:"user_id"`
 	}
 
-	type returnVals struct {
-		// the key will be the name of struct field unless you give it an explicit JSON tag
-		Cleaned_Body string `json:"cleaned_body"`
+	type Chirp struct {
+		ID        uuid.UUID     `json:"id"`
+		CreatedAt time.Time     `json:"created_at"`
+		UpdatedAt time.Time     `json:"updated_at"`
+		Body      string        `json:"body"`
+		UserID    uuid.NullUUID `json:"user_id"`
 	}
-	respBody := returnVals{}
 
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		// an error will be thrown if the JSON is invalid or has the wrong types
-		// any missing fields will simply have their values in the struct set to their zero value
 		log.Printf("Error decoding parameters: %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
 		return
@@ -102,8 +102,17 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	cleaned := strings.Join(words, " ")
 
-	respBody.Cleaned_Body = cleaned
-	respondWithJSON(w, http.StatusOK, respBody)
+	// create Chirp
+	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
+		Body:   cleaned,
+		UserID: params.UserID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error creating Chirp", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, Chirp(chirp))
 }
 
 func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
