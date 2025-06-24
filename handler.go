@@ -62,16 +62,16 @@ func getProfanityList() []string {
 
 func (cfg *apiConfig) chirpHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body   string        `json:"body"`
-		UserID uuid.NullUUID `json:"user_id"`
+		Body   string    `json:"body"`
+		UserID uuid.UUID `json:"user_id"`
 	}
 
 	type Chirp struct {
-		ID        uuid.UUID     `json:"id"`
-		CreatedAt time.Time     `json:"created_at"`
-		UpdatedAt time.Time     `json:"updated_at"`
-		Body      string        `json:"body"`
-		UserID    uuid.NullUUID `json:"user_id"`
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
 	}
 
 	// Decode Request
@@ -146,4 +146,28 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusCreated, User(user))
+}
+
+func (cfg *apiConfig) chirpListHandler(w http.ResponseWriter, r *http.Request) {
+
+	type Chirp struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+
+	// get Chirp list
+	chirpList, err := cfg.db.GetChirpList(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error getting Chirp list", err)
+		return
+	}
+	chirps := []Chirp{}
+	for _, c := range chirpList {
+		chirps = append(chirps, Chirp(c))
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
 }

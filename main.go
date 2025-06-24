@@ -26,10 +26,16 @@ func main() {
 	}
 
 	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL must be set")
+	}
 	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatal("Error opening the database")
+		log.Fatalf("Error opening the database: %s", err)
 	}
 	dbQueries := database.New(db)
 
@@ -49,6 +55,7 @@ func main() {
 	ServeMux.HandleFunc("GET /admin/metrics", cfg.metricHandler)
 	ServeMux.HandleFunc("POST /admin/reset", cfg.resetHandler)
 	ServeMux.HandleFunc("POST /api/chirps", cfg.chirpHandler)
+	ServeMux.HandleFunc("GET /api/chirps", cfg.chirpListHandler)
 	ServeMux.HandleFunc("POST /api/users", cfg.userHandler)
 
 	Server := &http.Server{
