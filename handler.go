@@ -148,6 +148,32 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusCreated, User(user))
 }
 
+func (cfg *apiConfig) chirpGetHandler(w http.ResponseWriter, r *http.Request) {
+
+	type Chirp struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+
+	chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Not a valid chirp id", err)
+		return
+	}
+
+	// get Chirp by ID
+	chirp, err := cfg.db.GetChirpByID(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Chirp not found", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, Chirp(chirp))
+}
+
 func (cfg *apiConfig) chirpListHandler(w http.ResponseWriter, r *http.Request) {
 
 	type Chirp struct {
