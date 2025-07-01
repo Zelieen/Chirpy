@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"internal/auth"
+
 	"github.com/google/uuid"
 )
 
@@ -18,7 +20,8 @@ type User struct {
 
 func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:password`
 	}
 
 	// Decode Request
@@ -31,13 +34,27 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// hash the password
+	hash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		log.Printf("Error during hashing: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error handling password", err)
+		return
+	}
+
 	// create user
-	user, err := cfg.db.CreateUser(r.Context(), params.Email)
+	user, err := cfg.db.CreateUser(r.Context(), params.Email) // add hashed_password here
 	if err != nil {
 		log.Printf("Error creating user: %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Error while creating user", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, User(user))
+	newUser := User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	}
+	respondWithJSON(w, http.StatusCreated, newUser)
 }
