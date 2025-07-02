@@ -19,6 +19,15 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
+func MakeUserSafe(u database.User) User {
+	return User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
+	}
+}
+
 func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
@@ -54,11 +63,40 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+	respondWithJSON(w, http.StatusCreated, MakeUserSafe(user))
+}
+
+func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email    string `json:"email"`
+		Password string `json:password`
 	}
-	respondWithJSON(w, http.StatusCreated, newUser)
+
+	// Decode Request
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
+		return
+	}
+
+	// get the user by email
+	user, err := cfg.db.GetUserByEMail(r.Context(), params.Email)
+	if err != nil {
+		log.Printf("Error fetching user: %s", err)
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		return
+	}
+
+	// check password validity
+	err = auth.CheckPasswordHash(params.Password, user.HashedPassword)
+	if err != nil {
+		log.Printf("Password did not match: %s", err)
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, MakeUserSafe(user))
 }

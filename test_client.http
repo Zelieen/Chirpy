@@ -13,7 +13,8 @@ POST http://localhost:8080/api/users
 Content-Type: application/json
 
 {
-    "email": "user@example.com"
+    "email": "user@example.com",
+    "password": "password"
 }
 
 ###
@@ -25,13 +26,22 @@ Content-Type: application/json
 
 {
     "body": "Example Chirp text with profane fornax word",
-    "user_id": "8f6bef22-691a-4b21-a26c-24d890bb87b1"
+    "user_id": "10bf80ee-98e4-4808-babb-a5515b0ce7fe"
 }
 
 ###
 GET http://localhost:8080/api/chirps
 
 ###
-GET http://localhost:8080/api/chirps/a3fafc48-2dfa-4bea-a08a-f87d5307b209
+GET http://localhost:8080/api/chirps/67a19b38-4f48-4fd6-b546-9bfb5db475bc
+
+###
+POST http://localhost:8080/api/login
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "password": "password"
+}
 
 ###
