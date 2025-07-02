@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"internal/auth"
+	"internal/database"
 
 	"github.com/google/uuid"
 )
@@ -43,7 +44,10 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create user
-	user, err := cfg.db.CreateUser(r.Context(), params.Email) // add hashed_password here
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hash,
+	})
 	if err != nil {
 		log.Printf("Error creating user: %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Error while creating user", err)

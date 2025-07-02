@@ -1,15 +1,6 @@
 GET http://localhost:8080/app/
 
 ###
-
-POST http://localhost:8080/api/validate_chirp
-Content-Type: application/json
-
-{
-    "Body": "Chirpy string"
-}
-
-###
 POST http://localhost:8080/api/validate_chirp
 Content-Type: application/json
 
@@ -33,8 +24,14 @@ POST http://localhost:8080/api/chirps
 Content-Type: application/json
 
 {
-    "body": "user@example.com",
-    "user_id": "123e4567-e89b-12d3-a456-426614174000"
+    "body": "Example Chirp text with profane fornax word",
+    "user_id": "8f6bef22-691a-4b21-a26c-24d890bb87b1"
 }
+
+###
+GET http://localhost:8080/api/chirps
+
+###
+GET http://localhost:8080/api/chirps/a3fafc48-2dfa-4bea-a08a-f87d5307b209
 
 ###
