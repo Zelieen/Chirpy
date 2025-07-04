@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,13 +23,27 @@ func CheckPasswordHash(password, hash string) error {
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	Token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Issuer:    "chirpy",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(expiresIn),
-		Subject:   string(userID),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+		Subject:   userID.String(),
 	})
 	signedJWT, err := Token.SignedString([]byte(tokenSecret))
 	if err != nil {
 		return "", err
 	}
 	return signedJWT, err
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte("AllYourBase"), nil
+	}, jwt.WithLeeway(5*time.Second))
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	id, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	return uuid.Parse(id)
 }
