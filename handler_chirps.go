@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"internal/database"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/zelieen/Chirpy/internal/database"
 
 	"github.com/google/uuid"
 )

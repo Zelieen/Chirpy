@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"internal/auth"
-	"internal/database"
+	"github.com/zelieen/Chirpy/internal/auth"
+	"github.com/zelieen/Chirpy/internal/database"
 
 	"github.com/google/uuid"
 )
