@@ -2,6 +2,9 @@ package auth
 
 import (
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestCheckPasswordHash(t *testing.T) {
@@ -55,6 +58,79 @@ func TestCheckPasswordHash(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckPasswordHash() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestJWTs(t *testing.T) {
+	secret1 := "testSecret"
+	secret2 := "other"
+	userID1 := uuid.New()
+	userID2 := uuid.New()
+	duration1 := time.Duration(1 * time.Hour)
+	duration2 := time.Duration(1 * time.Nanosecond)
+	JWT1, _ := MakeJWT(userID1, secret1, duration1)
+	JWT2, _ := MakeJWT(userID2, secret2, duration2)
+
+	time.Sleep(time.Duration(5 * time.Second))
+
+	tests := []struct {
+		name      string
+		user      uuid.UUID
+		secret    string
+		JWT       string
+		WantedErr bool
+	}{
+		{
+			name:      "Correct JWT",
+			user:      userID1,
+			secret:    secret1,
+			JWT:       JWT1,
+			WantedErr: false,
+		},
+		{
+			name:      "Wrong JWT",
+			user:      userID1,
+			secret:    secret1,
+			JWT:       JWT2,
+			WantedErr: true,
+		},
+		{
+			name:      "Wrong secret",
+			user:      userID1,
+			secret:    secret2,
+			JWT:       JWT1,
+			WantedErr: true,
+		},
+		{
+			name:      "Wrong user",
+			user:      userID2,
+			secret:    secret1,
+			JWT:       JWT1,
+			WantedErr: true,
+		},
+		{
+			name:      "Expired",
+			user:      userID2,
+			secret:    secret2,
+			JWT:       JWT2,
+			WantedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			userID, err := ValidateJWT(tt.JWT, tt.secret)
+
+			if (err != nil) != tt.WantedErr {
+				if (userID != tt.user) && (userID != tt.user) != tt.WantedErr {
+					t.Errorf("ValidateJWT() error matching userID: %v, wantedErr %v", (userID != tt.user), tt.WantedErr)
+				} else if err != nil {
+					t.Errorf("ValidateJWT() error = %v, wantedErr %v", err, tt.WantedErr)
+				}
+			}
+			//
 		})
 	}
 }
