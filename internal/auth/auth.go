@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -46,4 +48,15 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.UUID{}, err
 	}
 	return uuid.Parse(id)
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	bearing := headers.Get("Authorization")
+	if bearing == "" {
+		return bearing, fmt.Errorf("error: authorization header was empty: '%s'", bearing)
+	}
+	if bearing[0:6] != "Bearer " {
+		return bearing, fmt.Errorf("error: invalid authorization string: '%s'", bearing)
+	}
+	return bearing[7:], nil
 }
