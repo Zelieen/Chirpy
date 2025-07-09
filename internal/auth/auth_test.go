@@ -72,7 +72,7 @@ func TestJWTs(t *testing.T) {
 	JWT1, _ := MakeJWT(userID1, secret1, duration1)
 	JWT2, _ := MakeJWT(userID2, secret2, duration2)
 
-	time.Sleep(time.Duration(5 * time.Second))
+	time.Sleep(time.Duration(5 * time.Second)) // Because token expiration is checked with leeway of 5 seconds
 
 	tests := []struct {
 		name      string
@@ -130,7 +130,44 @@ func TestJWTs(t *testing.T) {
 					t.Errorf("ValidateJWT() error = %v, wantedErr %v", err, tt.WantedErr)
 				}
 			}
-			//
+		})
+	}
+}
+
+func TestBearerToken(t *testing.T) {
+	tests := []struct {
+		name      string
+		header    map[string][]string
+		wantedErr bool
+	}{
+		{
+			name: "Good Token Bearer",
+			header: map[string][]string{
+				"Authorization": {"Bearer authstringfortesting"},
+			},
+			wantedErr: false,
+		},
+		{
+			name: "Bad Token Bearer",
+			header: map[string][]string{
+				"Authorization": {"authstringfortesting"},
+			},
+			wantedErr: true,
+		},
+		{
+			name: "Bad header",
+			header: map[string][]string{
+				"Authorisation": {"Bearer authstringfortesting"},
+			},
+			wantedErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := GetBearerToken(tt.header)
+			if (err != nil) != tt.wantedErr {
+				t.Errorf("GetBearerToken() error = %v, wantErr %v", err, tt.wantedErr)
+			}
 		})
 	}
 }

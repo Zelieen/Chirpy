@@ -55,7 +55,10 @@ func GetBearerToken(headers http.Header) (string, error) {
 	if bearing == "" {
 		return bearing, fmt.Errorf("error: authorization header was empty: '%s'", bearing)
 	}
-	if bearing[0:6] != "Bearer " {
+	if len(bearing) < 8 {
+		return bearing, fmt.Errorf("error: too short authorization string: '%s'", bearing)
+	}
+	if bearing[0:7] != "Bearer " {
 		return bearing, fmt.Errorf("error: invalid authorization string: '%s'", bearing)
 	}
 	return bearing[7:], nil
