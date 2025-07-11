@@ -68,9 +68,15 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:password`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
+	type response struct {
+		User
+		Token string
+	}
+	const maxExpiry int = 3600
 
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
@@ -98,5 +104,22 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, MakeUserSafe(user))
+	// define expiry
+	expiry := params.ExpiresInSeconds
+	if (params.ExpiresInSeconds <= 0) || (params.ExpiresInSeconds > maxExpiry) {
+		expiry = maxExpiry
+	}
+
+	// make login token
+	newToken, err := auth.MakeJWT(user.ID, cfg.secret, (time.Duration(expiry) * time.Second))
+	if err != nil {
+		log.Printf("Could not create token: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Login failed", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User:  MakeUserSafe(user),
+		Token: newToken,
+	})
 }
