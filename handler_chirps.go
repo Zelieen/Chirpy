@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zelieen/Chirpy/internal/auth"
 	"github.com/zelieen/Chirpy/internal/database"
 
 	"github.com/google/uuid"
@@ -44,6 +45,20 @@ func (cfg *apiConfig) chirpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check log in status
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Token bearer: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		return
+	}
+	tokenUser, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		log.Printf("Invalid token: %s", err)
+		respondWithError(w, http.StatusUnauthorized, "Error validating the token", err)
+		return
+	}
+
 	// check Chirp length
 	if len(params.Body) > 140 {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
@@ -65,7 +80,7 @@ func (cfg *apiConfig) chirpHandler(w http.ResponseWriter, r *http.Request) {
 	// create Chirp
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleaned,
-		UserID: params.UserID,
+		UserID: tokenUser,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating Chirp", err)

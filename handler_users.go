@@ -74,7 +74,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	type response struct {
 		User
-		Token string
+		Token string `json:"token"`
 	}
 	const maxExpiry int = 3600
 
