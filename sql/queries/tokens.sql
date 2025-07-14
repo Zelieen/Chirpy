@@ -5,5 +5,5 @@ VALUES (
     NOW(),
     NOW(),
     $2,
-    NOW() + interval '1 hour'
+    NOW() + interval '60 days'
 );

@@ -115,7 +115,18 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// make refresh token
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		log.Printf("Could not create refresh token: %s", err)
+		log.Printf("Could not make refresh token: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Login failed", err)
+		return
+	}
+
+	// store refresh token in database
+	err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:  refreshToken,
+		UserID: user.ID,
+	})
+	if err != nil {
+		log.Printf("Could not store refresh token: %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Login failed", err)
 		return
 	}
