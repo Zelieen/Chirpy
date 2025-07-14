@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"time"
@@ -62,4 +64,10 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return bearing, fmt.Errorf("error: invalid authorization string: '%s'", bearing)
 	}
 	return bearing[7:], nil
+}
+
+func MakeRefreshToken() (string, error) {
+	data := make([]byte, 32)
+	rand.Read(data)
+	return hex.EncodeToString(data), nil
 }
