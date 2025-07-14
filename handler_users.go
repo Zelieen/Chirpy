@@ -68,15 +68,15 @@ func (cfg *apiConfig) userHandler(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
-	const maxExpiry int = 3600
+	const Expiry int = 3600
 
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
@@ -104,22 +104,25 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// define expiry
-	expiry := params.ExpiresInSeconds
-	if (params.ExpiresInSeconds <= 0) || (params.ExpiresInSeconds > maxExpiry) {
-		expiry = maxExpiry
-	}
-
 	// make login token
-	newToken, err := auth.MakeJWT(user.ID, cfg.secret, (time.Duration(expiry) * time.Second))
+	newToken, err := auth.MakeJWT(user.ID, cfg.secret, (time.Duration(Expiry) * time.Second))
 	if err != nil {
 		log.Printf("Could not create token: %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Login failed", err)
 		return
 	}
 
+	// make refresh token
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		log.Printf("Could not create refresh token: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Login failed", err)
+		return
+	}
+
 	respondWithJSON(w, http.StatusOK, response{
-		User:  MakeUserSafe(user),
-		Token: newToken,
+		User:         MakeUserSafe(user),
+		Token:        newToken,
+		RefreshToken: refreshToken,
 	})
 }
