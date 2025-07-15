@@ -76,7 +76,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
 	}
-	const Expiry int = 3600
+	const Expiry int = 3600 // this is declared in refreshHandler as well
 
 	// Decode Request
 	decoder := json.NewDecoder(r.Body)
@@ -136,4 +136,47 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Token:        newToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+func (cfg *apiConfig) refreshHandler(w http.ResponseWriter, r *http.Request) {
+	const Expiry int = 3600 // this is declared in loginHandler as well
+
+	type response struct {
+		AccessToken string `json:"token"`
+	}
+	// check log in status
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Token bearer: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		return
+	}
+
+	// verify refresh token from database
+	fullRefToken, err := cfg.db.GetRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		log.Printf("Refresh Token: %s\n", err)
+		respondWithError(w, http.StatusUnauthorized, "Error getting the refresh token", err)
+		return
+	}
+	if !fullRefToken.RevokedAt.Valid {
+		log.Printf("Refresh Token: %s\n", err)
+		respondWithError(w, http.StatusUnauthorized, "Refresh token was revoked and is no longer valid", err)
+		return
+	}
+	if fullRefToken.ExpiresAt.Compare(time.Now()) < 1 {
+		log.Printf("Refresh Token: %s\n", err)
+		respondWithError(w, http.StatusUnauthorized, "Refresh token has expired", err)
+		return
+	}
+
+	// make login token
+	newToken, err := auth.MakeJWT(fullRefToken.UserID, cfg.secret, (time.Duration(Expiry) * time.Second))
+	if err != nil {
+		log.Printf("Could not create access token: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Refresh failed", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, response{AccessToken: newToken})
 }

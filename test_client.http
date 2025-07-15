@@ -1,12 +1,7 @@
 GET http://localhost:8080/app/
 
 ###
-POST http://localhost:8080/api/validate_chirp
-Content-Type: application/json
-
-{
-    "Body": "profane sharbert Chirpy string"
-}
+POST http://localhost:8080/admin/reset
 
 ###
 POST http://localhost:8080/api/users
@@ -16,24 +11,6 @@ Content-Type: application/json
     "email": "user@example.com",
     "password": "password"
 }
-
-###
-POST http://localhost:8080/admin/reset
-
-###
-POST http://localhost:8080/api/chirps
-Content-Type: application/json
-
-{
-    "body": "Example Chirp text with profane fornax word",
-    "user_id": "1d7cbb98-bf4e-4ac6-8b7c-bbf5e8c779ed"
-}
-
-###
-GET http://localhost:8080/api/chirps
-
-###
-GET http://localhost:8080/api/chirps/67a19b38-4f48-4fd6-b546-9bfb5db475bc
 
 ###
 POST http://localhost:8080/api/login
@@ -57,11 +34,21 @@ Content-Type: application/json
 ###
 POST http://localhost:8080/api/chirps
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiIxZDdjYmI5OC1iZjRlLTRhYzYtOGI3Yy1iYmY1ZThjNzc5ZWQiLCJleHAiOjE3NTIyMzM1MDcsImlhdCI6MTc1MjIyOTkwN30.RpQoiJbVEVAn8elCd-oYXMQcveSjDMPsV2CBZScXIzc
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJlMDY2MjZhYS01YjVmLTQxMmQtYjA5MC1hNjRmZjVjMjIxMmIiLCJleHAiOjE3NTIyMzEwOTEsImlhdCI6MTc1MjIzMTA4MX0.Jv0yCTQCDY-68nHnoyqO2_H76LpUzaLUW4ARQzj69CY
 
 {
-    "body": "Example Chirp text with profane fornax word",
-    "user_id": "1d7cbb98-bf4e-4ac6-8b7c-bbf5e8c779ed"
+    "body": "Example Chirp text with profane fornax word"
 }
+
+###
+POST http://localhost:8080/api/refresh
+Authorization: Bearer 481d419581fd76e188be840393802c0b372bdfcc45df9f4213ae052feab20a1b
+
+###
+
+GET http://localhost:8080/api/chirps
+
+###
+GET http://localhost:8080/api/chirps/67a19b38-4f48-4fd6-b546-9bfb5db475bc
 
 ###
