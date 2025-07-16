@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -133,6 +134,10 @@ func (cfg *apiConfig) chirpListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fill the response list
+	if r.URL.Query().Get("sort") == "desc" {
+		slices.Reverse(chirpList)
+	}
+
 	chirps := []Chirp{}
 	for _, c := range chirpList {
 		chirps = append(chirps, Chirp(c))
