@@ -109,11 +109,30 @@ func (cfg *apiConfig) chirpGetHandler(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) chirpListHandler(w http.ResponseWriter, r *http.Request) {
 	// get Chirp list
-	chirpList, err := cfg.db.GetChirpList(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error getting Chirp list", err)
-		return
+	author := r.URL.Query().Get("author_id")
+	chirpList := []database.Chirp{}
+	if author == "" { // get all chirps
+		completeList, err := cfg.db.GetChirpList(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Error getting Chirp list", err)
+			return
+		}
+		chirpList = append(chirpList, completeList...)
+	} else { // filter chirps from author
+		author_id, err := uuid.Parse(author)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Error invalid user id", err)
+			return
+		}
+		authorList, err := cfg.db.GetChirpsByAuthor(r.Context(), author_id)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Error getting Chirp list from user", err)
+			return
+		}
+		chirpList = append(chirpList, authorList...)
 	}
+
+	// fill the response list
 	chirps := []Chirp{}
 	for _, c := range chirpList {
 		chirps = append(chirps, Chirp(c))
