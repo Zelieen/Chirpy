@@ -199,3 +199,56 @@ func (cfg *apiConfig) revokeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// check log in status
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Token bearer: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		log.Printf("Invalid token: %s", err)
+		respondWithError(w, http.StatusUnauthorized, "Error validating the token", err)
+		return
+	}
+
+	// Decode Request
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error decoding parameters", err)
+		return
+	}
+
+	// Hash the password
+	hash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		log.Printf("Error during hashing: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error handling password", err)
+		return
+	}
+
+	// Change user in database
+	updatedUser, err := cfg.db.UpdateUserCredentials(r.Context(), database.UpdateUserCredentialsParams{
+		ID:             userID,
+		Email:          params.Email,
+		HashedPassword: hash,
+	})
+	if err != nil {
+		log.Printf("Error during updating: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error updating the user credentials", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, MakeUserSafe(updatedUser))
+}

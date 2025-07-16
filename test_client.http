@@ -42,7 +42,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiL
 
 ###
 POST http://localhost:8080/api/refresh
-Authorization: Bearer 481d419581fd76e188be840393802c0b372bdfcc45df9f4213ae052feab20a1b
+Authorization: Bearer b9df533bd97c8d7b18f279e16a2c3a012ca6e31690b1acf31fda2d38d2f48941
 
 ###
 
@@ -50,5 +50,18 @@ GET http://localhost:8080/api/chirps
 
 ###
 GET http://localhost:8080/api/chirps/67a19b38-4f48-4fd6-b546-9bfb5db475bc
+
+###
+POST http://localhost:8080/api/revoke
+Authorization: Bearer b9df533bd97c8d7b18f279e16a2c3a012ca6e31690b1acf31fda2d38d2f48941
+
+###
+PUT http://localhost:8080/api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiI5NDY5MjdiOC1mNjU2LTQ2ZTAtOTdhYi1hYmYyOGYzNDY4MjEiLCJleHAiOjE3NTI2ODgxMjksImlhdCI6MTc1MjY4NDUyOX0.-rBJT8utktXJ1_K6CGB0JloVlS7aBimGyecCFL0GNw0
+
+{
+    "email": "userupdate@example.com",
+    "password": "passwordupdate"
+}
 
 ###
