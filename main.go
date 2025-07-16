@@ -66,6 +66,7 @@ func main() {
 	ServeMux.HandleFunc("POST /api/users", cfg.userHandler)
 	ServeMux.HandleFunc("POST /api/login", cfg.loginHandler)
 	ServeMux.HandleFunc("POST /api/refresh", cfg.refreshHandler)
+	ServeMux.HandleFunc("POST /api/revoke", cfg.revokeHandler)
 
 	Server := &http.Server{
 		Handler: ServeMux,

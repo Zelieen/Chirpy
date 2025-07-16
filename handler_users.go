@@ -155,17 +155,17 @@ func (cfg *apiConfig) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	// verify refresh token from database
 	fullRefToken, err := cfg.db.GetRefreshToken(r.Context(), refreshToken)
 	if err != nil {
-		log.Printf("Refresh Token: %s\n", err)
+		log.Printf("Database: %s\n", err)
 		respondWithError(w, http.StatusUnauthorized, "Error getting the refresh token", err)
 		return
 	}
-	if !fullRefToken.RevokedAt.Valid {
-		log.Printf("Refresh Token: %s\n", err)
+	if fullRefToken.RevokedAt.Valid {
+		log.Printf("No valid token")
 		respondWithError(w, http.StatusUnauthorized, "Refresh token was revoked and is no longer valid", err)
 		return
 	}
 	if fullRefToken.ExpiresAt.Compare(time.Now()) < 1 {
-		log.Printf("Refresh Token: %s\n", err)
+		log.Printf("Expires at: %s\n", fullRefToken.ExpiresAt)
 		respondWithError(w, http.StatusUnauthorized, "Refresh token has expired", err)
 		return
 	}
@@ -179,4 +179,23 @@ func (cfg *apiConfig) refreshHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, response{AccessToken: newToken})
+}
+
+func (cfg *apiConfig) revokeHandler(w http.ResponseWriter, r *http.Request) {
+	// check log in status
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Token bearer: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		return
+	}
+
+	// revoke the refresh token
+	err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		log.Printf("Token from database: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Could not revoke token", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
