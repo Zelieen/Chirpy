@@ -121,3 +121,47 @@ func (cfg *apiConfig) chirpListHandler(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, chirps)
 }
+
+func (cfg *apiConfig) chirpDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Not a valid chirp id", err)
+		return
+	}
+
+	// check log in status
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Token bearer: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		return
+	}
+	tokenUser, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		log.Printf("Invalid token: %s", err)
+		respondWithError(w, http.StatusUnauthorized, "Error validating the token", err)
+		return
+	}
+
+	// check chirp exists
+	chirp, err := cfg.db.GetChirpByID(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Chirp not found", err)
+		return
+	}
+
+	// check authorship
+	if chirp.UserID != tokenUser {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	// delete Chirp
+	err = cfg.db.DeleteChirpByID(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error deleting Chirp", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

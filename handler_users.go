@@ -210,7 +210,7 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) 
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		log.Printf("Token bearer: %s", err)
-		respondWithError(w, http.StatusInternalServerError, "Error getting the token bearer", err)
+		respondWithError(w, http.StatusUnauthorized, "Error getting the token bearer", err)
 		return
 	}
 	userID, err := auth.ValidateJWT(token, cfg.secret)
