@@ -71,3 +71,19 @@ func MakeRefreshToken() (string, error) {
 	rand.Read(data)
 	return hex.EncodeToString(data), nil
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	const keyword = "ApiKey "
+	key := headers.Get("Authorization")
+	if key == "" {
+		return key, fmt.Errorf("error: authorization header was empty: '%s'", key)
+	}
+	if len(key) < len(keyword) {
+		return key, fmt.Errorf("error: too short authorization string: '%s'", key)
+	}
+	fmt.Printf("Comparing keyword: '%s'\n", key[0:len(keyword)])
+	if key[0:len(keyword)] != keyword {
+		return key, fmt.Errorf("error: invalid authorization string: '%s'", key)
+	}
+	return key[len(keyword):], nil
+}

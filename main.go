@@ -18,6 +18,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	secret         string
+	polkaKey       string
 }
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	// load all the environment values
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
@@ -38,6 +40,12 @@ func main() {
 	if secret == "" {
 		log.Fatal("SECRET must be set")
 	}
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY must be set")
+	}
+
+	// connect to the database
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening the database: %s", err)
@@ -46,13 +54,17 @@ func main() {
 
 	const filepathRoot = "."
 	const port = "8080"
+
+	// set config
 	cfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       platform,
 		secret:         secret,
+		polkaKey:       polkaKey,
 	}
 
+	// set server
 	ServeMux := http.NewServeMux()
 	appHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	ServeMux.Handle("/app/", cfg.middlewareMetricsInc(appHandler))
@@ -76,6 +88,7 @@ func main() {
 		Addr:    ":" + port,
 	}
 
+	// start the server
 	log.Printf("Serving from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(Server.ListenAndServe())
 }
